@@ -1,24 +1,28 @@
 import jwt from "jsonwebtoken"; 
-import User from "../models/User.js"
+import User from "../models/User.js";
 
-
-const protectRoute = async(req,res,next)=>{
+const protectRoute = async (req, res, next) => {
     try {
-        const token=req.header("Authorization").replace("Bearer",""); 
-        if(!token) {
-            return res.status(401).json({message:"No authentification token, access denied"});
+        const token = req.header("Authorization")?.replace("Bearer ", "").trim(); 
+
+        if (!token) {
+            return res.status(401).json({ message: "No authentication token, access denied" });
         }
 
-        const decoded=jwt.verify(token,process.env.JWT_SECRET); 
-        const user=await User.findById(decoded.userId).select("-password");
-        if(!user) {
-            return res.status(401).json({message:"Token is not valid"});
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const user = await User.findById(decoded.userId).select("-password");
+
+        if (!user) {
+            return res.status(401).json({ message: "Invalid or expired token" });
         }
-        req.user=user; 
+
+        req.user = user; 
         next(); 
     } catch (error) {
-        console.error("Authentication error : ",error.message); 
-        return res.status(401).json({message:"Token is not valid2"});
+        console.error("Authentication error:", error.message); 
+        return res.status(401).json({ message: "Invalid or expired token" });
     }
 }; 
-export default protectRoute; 
+
+export default protectRoute;
