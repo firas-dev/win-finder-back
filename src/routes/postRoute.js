@@ -7,10 +7,12 @@ import protectRoute from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", /*protectRoute ,*/async (req, res) => {
+router.post("/", protectRoute ,async (req, res) => {
   try {
     const { titre, date, lieu, description, recompense,color, status,categorie, images } = req.body;
-
+    if(!titre||!date||!lieu||!description||!color||!status||!categorie||!images){
+      return res.status(400).json({message: "Please provide the required fields"});
+    }
     // 1. Create Objet
     const newObjet = new Objet({
       color, // ✅ fixed from 'couleur'
