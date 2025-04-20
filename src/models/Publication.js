@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 
 const publicationSchema = new mongoose.Schema({
-  titre: {
+  title: {
     type: String,
     required: true
   },
@@ -10,7 +10,7 @@ const publicationSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  lieu: {
+  location: {
     type: String,
     required: true
   },
@@ -18,7 +18,7 @@ const publicationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  recompense: {
+  reward: {
     type: Number,
     default: 0
   },

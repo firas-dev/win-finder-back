@@ -10,7 +10,7 @@ const router = express.Router();
 router.post("/", protectRoute ,async (req, res) => {
   try {
     const { title, date, location, description, reward,color, itemType,category, images } = req.body;
-    if(!title||!date||!location||!description||!color||!itemType||!category||!images){
+    if(!title||!date||!location||!description||!color||!itemType||!category){
       return res.status(400).json({message: "Please provide the required fields"});
     }
     // 1. Create Objet

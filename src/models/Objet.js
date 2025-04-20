@@ -6,12 +6,12 @@ const objetSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  status: {
+  itemType: {
     type: String,
     enum: ['Lost', 'Found'],
     required: true,
   },
-  categorie: {
+  category: {
     type: String,
     enum: ['electronic', 'accessory', 'document', 'other'],
     required: true,
