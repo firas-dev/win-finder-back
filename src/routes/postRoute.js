@@ -9,15 +9,15 @@ const router = express.Router();
 
 router.post("/", protectRoute ,async (req, res) => {
   try {
-    const { titre, date, lieu, description, recompense,color, status,categorie, images } = req.body;
-    if(!titre||!date||!lieu||!description||!color||!status||!categorie||!images){
+    const { title, date, location, description, reward,color, itemType,category, images } = req.body;
+    if(!title||!date||!location||!description||!color||!itemType||!category||!images){
       return res.status(400).json({message: "Please provide the required fields"});
     }
     // 1. Create Objet
     const newObjet = new Objet({
       color, // ✅ fixed from 'couleur'
-      status,
-      categorie
+      itemType,
+      category
     });
     await newObjet.save();
 
@@ -36,11 +36,11 @@ router.post("/", protectRoute ,async (req, res) => {
 
     // 3. Create Publication with objet ref
     const newPublication = new Publication({
-      titre,
+      title,
       date,
-      lieu,
+      location,
       description,
-      recompense,
+      reward,
       objet: newObjet._id,
       //user:req.user._id
       user:"67fbf7b3d94ce4f7747a5e1b"
@@ -98,9 +98,9 @@ router.delete("/:id", /*protectRoute ,*/ async (req, res) => {
       return res.status(400).json({ message: "item not found" });
     }
 
-    /*if (item.user.toString() !== req.user._id.toString()) {
+    if (item.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "UNAUTHORIZED" });
-    }*/
+    }
 
     // Check if objet exists
     if (item.objet) {
