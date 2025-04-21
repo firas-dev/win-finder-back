@@ -69,31 +69,35 @@ router.post("/", protectRoute ,async (req, res) => {
 });
 
 
-router.get("/",async(req,res)=>{
-    try {
-        const page=req.query.page||1; 
-        const limit=req.query.limit||5; 
-        const skip =(page-1)*limit; 
+router.get("/", async (req, res) => {
+  try {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 5;
+    const skip = (page - 1) * limit;
 
-        const items=await Publication.find().sort({createdAt: -1})
-        .skip(skip)
-        .limit(limit)
-        .populate("user","usernama profileImage"); 
+    // Populate the 'objet' field to include its full data
+    const items = await Publication.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("user", "username profileImage")
+      .populate("objet"); // Populate the 'objet' field
 
-        const total=await Publication.countDocuments(); 
-        res.send({
-            items,
-            currentPage:page,
-            totalItems:total,
-            totalPages:Math.ceil(total/limit),
-        }); 
-    } catch (error) {
-        console.log("error in get all items route ",error); 
-        res.status(500).json({message :"internal server error"}) ; 
-    }
+    const total = await Publication.countDocuments();
+    res.send({
+      items,
+      currentPage: page,
+      totalItems: total,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.log("error in get all items route", error);
+    res.status(500).json({ message: "internal server error" });
+  }
 });
 
-router.get("/user",/*protectRoute ,*/ async(req,res)=>{
+
+router.get("/user",protectRoute , async(req,res)=>{
   try {
     const items=Publication.find({user:req.user._id}).sort({createdAt: -1}); 
     res.json(items); 
