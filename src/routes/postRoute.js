@@ -24,11 +24,20 @@ router.post("/", protectRoute ,async (req, res) => {
     // 2. Create and attach Images
     const imageDocs = await Promise.all(
       images.map(async (img) => {
-        const uploadResponse = await cloudinary.uploader.upload(img.url); 
-        const imageUrl=uploadResponse.secure_url;
-        const image = new Image({ url: imageUrl, objet: newObjet._id });
-        await image.save();
-        return image._id;
+        try {
+          if (!img.url || !img.url.startsWith("data:image/")) {
+            throw new Error("Invalid image format");
+          }
+          const uploadResponse = await cloudinary.uploader.upload(img.url); 
+          const imageUrl=uploadResponse.secure_url;
+          const image = new Image({ url: imageUrl, objet: newObjet._id });
+          await image.save();
+          return image._id;
+        } catch (error) {
+          console.error("Image upload failed:", err);
+          throw new Error("Failed to upload one or more images");
+        }
+        
       })
     );
     newObjet.images = imageDocs;
