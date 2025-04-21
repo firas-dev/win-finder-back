@@ -34,7 +34,7 @@ router.post("/", protectRoute ,async (req, res) => {
           await image.save();
           return image._id;
         } catch (error) {
-          console.error("Image upload failed:", err);
+          console.error("Image upload failed:", error);
           throw new Error("Failed to upload one or more images");
         }
         
@@ -51,8 +51,8 @@ router.post("/", protectRoute ,async (req, res) => {
       description,
       reward,
       objet: newObjet._id,
-      //user:req.user._id
-      user:"67fbf7b3d94ce4f7747a5e1b"
+      user:req.user._id
+      
     });
     await newPublication.save();
 
