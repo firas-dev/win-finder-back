@@ -82,7 +82,7 @@ router.get("/", async (req, res) => {
       .limit(limit)
       .populate("user", "username profileImage")
       .populate("objet"); // Populate the 'objet' field
-
+      console.log("Backend Response Items: ", items);
     const total = await Publication.countDocuments();
     res.send({
       items,
