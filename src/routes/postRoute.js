@@ -81,7 +81,13 @@ router.get("/", async (req, res) => {
       .skip(skip)
       .limit(limit)
       .populate("user", "username profileImage")
-      .populate("objet"); // Populate the 'objet' field
+      .populate({
+        path: "objet",  // Populate the 'objet' field
+        populate: {
+          path: "images",  // Populate the 'images' field within 'objet'
+          select: "url"    // Only select the 'url' field of the image
+        }
+      });
       console.log("Backend Response Items: ", items);
     const total = await Publication.countDocuments();
     res.send({
