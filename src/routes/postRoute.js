@@ -111,10 +111,33 @@ router.get("/user",protectRoute , async(req,res)=>{
     console.error("get user items error",error); 
     res.status(500).json({message:"Server error"})
   }
-})
+}); 
 
 
-router.delete("/:id", /*protectRoute ,*/ async (req, res) => {
+router.get("/:id", protectRoute, async (req, res) => {
+  try {
+    const item = await Publication.findById(req.params.id);
+
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    // Optional: Only allow access to the owner
+    if (item.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    res.status(200).json(item); // ✅ Send back the item
+  } catch (error) {
+    console.error("Error fetching item by ID:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+
+
+router.delete("/:id", protectRoute , async (req, res) => {
   try {
     const item = await Publication.findById(req.params.id).populate("objet");
 
