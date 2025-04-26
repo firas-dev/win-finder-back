@@ -38,7 +38,8 @@ router.get("/:userId1/:userId2", protectRoute, async (req, res) => {
   }
 });
 
-router.post("/", protectRoute, async (req, res) => organi try {
+router.post("/", protectRoute, async (req, res) => {
+    try{
     const { sender, receiver, content } = req.body;
 
     if (!sender || !receiver || !content || content.trim() === "") {
