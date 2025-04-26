@@ -122,9 +122,9 @@ router.get("/:id", protectRoute, async (req, res) => {
     }
 
     // Optional: Only allow access to the owner
-    if (item.user.toString() !== req.user._id.toString()) {
+    /*if (item.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Unauthorized" });
-    }
+    }*/
 
     res.status(200).json(item); // ✅ Send back the item
   } catch (error) {
