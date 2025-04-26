@@ -68,6 +68,8 @@ router.post("/", protectRoute, async (req, res) => {
 router.get("/conversations/:userId", protectRoute, async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log("Received userId:", userId); // Debug
+    console.log("Is userId valid?", mongoose.Types.ObjectId.isValid(userId)); // Debug
     if (!validateObjectId(userId)) {
       return res.status(400).json({ error: "Invalid user ID" });
     }

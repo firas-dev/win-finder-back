@@ -88,7 +88,6 @@ router.get("/", async (req, res) => {
           select: "url"    // Only select the 'url' field of the image
         }
       });
-      console.log("Backend Response Items: ", items);
     const total = await Publication.countDocuments();
     res.send({
       items,
