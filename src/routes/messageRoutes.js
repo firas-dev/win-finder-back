@@ -107,7 +107,6 @@ router.get("/conversations/:userId", protectRoute, async (req, res) => {
   }
 });
 
-// New endpoint to mark messages as read
 router.put("/mark-read/:userId1/:userId2", protectRoute, async (req, res) => {
   try {
     const { userId1, userId2 } = req.params;
@@ -151,7 +150,7 @@ router.get("/:userId1/:userId2", protectRoute, async (req, res) => {
         { sender: userId2, receiver: userId1 },
       ],
     })
-      .sort({ timestamp: -1 }) // Newest first
+      .sort({ timestamp: 1 }) // Oldest first
       .skip((parseInt(page) - 1) * parseInt(limit))
       .limit(parseInt(limit))
       .lean();
@@ -162,6 +161,7 @@ router.get("/:userId1/:userId2", protectRoute, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
+
 
 
 
