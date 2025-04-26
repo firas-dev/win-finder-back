@@ -12,9 +12,10 @@ router.post("/register",async(req,res)=>{
      try {
         const{email,username,password,phone,adresse}=req.body; 
 
-        if(!username || !email || !password || !phone){
-            return  res.status(400).json({message: "All fields are required! "});
+        if (!username?.trim() || !email?.trim() || !password?.trim() || !phone?.trim()) {
+            return res.status(400).json({message: "All fields are required!"});
         }
+        
         if (password.length <6){
             return res.status(400).json({message: "Password should be at least 6 caracters long"});
         }
