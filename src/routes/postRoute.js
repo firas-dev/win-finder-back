@@ -134,8 +134,6 @@ router.get("/:id", protectRoute, async (req, res) => {
 });
 
 
-
-
 router.delete("/:id", protectRoute , async (req, res) => {
   try {
     const item = await Publication.findById(req.params.id).populate("objet");

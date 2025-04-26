@@ -10,9 +10,9 @@ const generateToken=(userId) => {
 
 router.post("/register",async(req,res)=>{
      try {
-        const{email,username,password}=req.body; 
+        const{email,username,password,phone,adresse}=req.body; 
 
-        if(!username || !email || !password){
+        if(!username || !email || !password || !phone){
             return  res.status(400).json({message: "All fields are required! "});
         }
         if (password.length <6){
@@ -34,6 +34,8 @@ router.post("/register",async(req,res)=>{
         const user=new User({
             email,
             username, 
+            phone,
+            adresse,
             password,
             profileImage,
         })
