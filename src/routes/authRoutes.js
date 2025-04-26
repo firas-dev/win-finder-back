@@ -49,6 +49,8 @@ router.post("/register",async(req,res)=>{
                 _id:user._id, 
                 username:user.username, 
                 email:user.email, 
+                phone:user.phone,
+                adresse : user.adresse ,
                 profileImage:user.profileImage
             },
         }); 
