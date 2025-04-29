@@ -24,7 +24,7 @@ router.post("/", protectRoute, async (req, res) => {
     await newObjet.save();
 
     // 2. Upload Images
-    /*if (!Array.isArray(images) || images.length === 0) {
+    if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ message: "Please upload at least one image" });
     }
 
@@ -43,7 +43,7 @@ router.post("/", protectRoute, async (req, res) => {
       })
     );
 
-    newObjet.images = imageDocs;*/
+    newObjet.images = imageDocs;
     await newObjet.save();
 
     // 3. Geocode the location
