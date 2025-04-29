@@ -19,6 +19,16 @@ router.post("/", protectRoute, async (req, res) => {
       return res.status(400).json({ message: "Please provide the required fields" });
     }
 
+    if (!Array.isArray(location) || location.length !== 2) {
+      return res.status(400).json({ message: "Location must be an array [latitude, longitude]" });
+    }
+
+    const [latitude, longitude] = location;
+    const geoLocation = {
+      type: "Point",
+      coordinates: [longitude, latitude], // GeoJSON format: [lon, lat]
+    };
+
     // 1. Create Objet
     const newObjet = new Objet({ color, itemType, category });
     await newObjet.save();
@@ -46,32 +56,29 @@ router.post("/", protectRoute, async (req, res) => {
     newObjet.images = imageDocs;
     await newObjet.save();
 
-    // 3. Geocode the location
-    const geoLocation = await geocodeAddress(location); // { type: 'Point', coordinates: [lon, lat] }
-
-    // 4. Create Publication
+    // 3. Create Publication
     const newPublication = new Publication({
       title,
       date,
-      location,
+      location: req.body.location, // store raw [lat, lon] if needed
       description,
       reward,
       objet: newObjet._id,
       user: req.user._id,
-      geoLocation // Add this field in your Publication schema if needed
+      geoLocation,
     });
 
     await newPublication.save();
 
-    // 5. Find nearby users (within 5km) and send notifications
+    // 4. Find nearby users (within 5km) and send notifications
     const nearbyUsers = await User.find({
       location: {
         $near: {
           $geometry: geoLocation,
-          $maxDistance: 5000, // 5km
+          $maxDistance: 5000,
         },
       },
-      _id: { $ne: req.user._id }, // exclude publisher
+      _id: { $ne: req.user._id },
     });
 
     await Promise.all(
@@ -93,6 +100,7 @@ router.post("/", protectRoute, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 
 

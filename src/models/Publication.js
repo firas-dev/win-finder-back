@@ -46,6 +46,6 @@ const publicationSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
+PublicationSchema.index({ geoLocation: '2dsphere' });
 const Publication = mongoose.model("Publication", publicationSchema);
 export default Publication;
