@@ -19,21 +19,38 @@ router.post("/", protectRoute, async (req, res) => {
       return res.status(400).json({ message: "Please provide the required fields" });
     }
 
-    if (!Array.isArray(location) || location.length !== 2) {
-      return res.status(400).json({ message: "Location must be an array [latitude, longitude]" });
+    // ✅ Ensure location is a valid [lat, lon] array
+    if (
+      !Array.isArray(location) ||
+      location.length !== 2 ||
+      typeof location[0] !== 'number' ||
+      typeof location[1] !== 'number'
+    ) {
+      return res.status(400).json({ message: "Location must be a [latitude, longitude] array of numbers" });
     }
 
     const [latitude, longitude] = location;
+
+    // ✅ Convert to GeoJSON format
     const geoLocation = {
       type: "Point",
-      coordinates: [longitude, latitude], // GeoJSON format: [lon, lat]
+      coordinates: [longitude, latitude], // GeoJSON uses [lon, lat]
     };
 
-    // 1. Create Objet
-    const newObjet = new Objet({ color, itemType, category });
+    // ✅ Create Object
+    const newObjet = new Objet({
+      title,
+      date,
+      description,
+      reward,
+      color,
+      itemType,
+      category,
+      location: geoLocation, // Use the fixed format
+    });
     await newObjet.save();
 
-    // 2. Upload Images
+    // ✅ Handle Images
     if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ message: "Please upload at least one image" });
     }
@@ -56,52 +73,14 @@ router.post("/", protectRoute, async (req, res) => {
     newObjet.images = imageDocs;
     await newObjet.save();
 
-    // 3. Create Publication
-    const newPublication = new Publication({
-      title,
-      date,
-      location: req.body.location, // store raw [lat, lon] if needed
-      description,
-      reward,
-      objet: newObjet._id,
-      user: req.user._id,
-      geoLocation,
-    });
+    // ✅ Optionally: Create a Publication linked to the Object here
 
-    await newPublication.save();
-
-    // 4. Find nearby users (within 5km) and send notifications
-    const nearbyUsers = await User.find({
-      location: {
-        $near: {
-          $geometry: geoLocation,
-          $maxDistance: 5000,
-        },
-      },
-      _id: { $ne: req.user._id },
-    });
-
-    await Promise.all(
-      nearbyUsers.map(async (user) => {
-        const notification = new Notification({
-          userId: user._id,
-          type: 'alert',
-          title: 'Nearby item posted',
-          message: `An item matching your area was posted: "${title}"`,
-        });
-        await notification.save();
-      })
-    );
-
-    res.status(201).json({ message: "Publication created", publication: newPublication });
-
-  } catch (err) {
-    console.error("Error creating publication:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(201).json({ message: "Item created successfully", objet: newObjet });
+  } catch (error) {
+    console.error("Error creating item:", error);
+    res.status(500).json({ message: error.message || "Internal server error" });
   }
 });
-
-
 
 
 router.get("/", async (req, res) => {
