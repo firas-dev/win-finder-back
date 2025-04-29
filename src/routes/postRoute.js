@@ -10,7 +10,13 @@ import axios from 'axios';
 
 const router = express.Router();
 
+const axios = require('axios');
+
 const geocodeAddress = async (location) => {
+  if (!location || typeof location !== 'string' || location.trim() === '') {
+    throw new Error("Invalid location input");
+  }
+
   const res = await axios.get('https://nominatim.openstreetmap.org/search', {
     params: {
       q: location,
@@ -18,10 +24,12 @@ const geocodeAddress = async (location) => {
       limit: 1,
     },
     headers: {
-      'User-Agent': 'YourAppName/1.0'
+      'User-Agent': 'FinderApp/1.0 (firaselhaj3@gmail.com)'
     }
   });
-  console.log("Geocoding response:", res.data); 
+
+  console.log("Geocoding response:", res.data);
+
   if (res.data.length > 0) {
     return [
       parseFloat(res.data[0].lon),
@@ -34,6 +42,7 @@ const geocodeAddress = async (location) => {
 
 
 
+
 router.post("/", protectRoute, async (req, res) => {
   try {
     const { title, date, location, description, reward, color, itemType, category, images } = req.body;
@@ -41,7 +50,9 @@ router.post("/", protectRoute, async (req, res) => {
     if (!title || !date || !description || !color || !itemType || !category) {
       return res.status(400).json({ message: "Please provide the required fields" });
     }
-
+    if (!location || typeof location !== 'string' || location.trim() === '') {
+      throw new Error("Invalid location input");
+    }    
     let coordinates = [0, 0];
       if (location ) {
         try {
