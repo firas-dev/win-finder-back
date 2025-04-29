@@ -1,54 +1,55 @@
 import cloudinary from "../lib/cloudinary.js"
 import express from "express";
 import Publication from "../models/Publication.js";
+import { geocodeAddress } from '../utils/geocode.js';
 import Objet from "../models/Objet.js"; 
 import Image from "../models/Image.js"; 
 import protectRoute from "../middleware/auth.middleware.js";
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 
 const router = express.Router();
 
-router.post("/", protectRoute ,async (req, res) => {
+
+router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, date, location, description, reward,color, itemType,category, images } = req.body;
-    if(!title||!date||!location||!description||!color||!itemType||!category){
-      return res.status(400).json({message: "Please provide the required fields"});
+    const { title, date, location, description, reward, color, itemType, category, images } = req.body;
+
+    if (!title || !date || !location || !description || !color || !itemType || !category) {
+      return res.status(400).json({ message: "Please provide the required fields" });
     }
+
     // 1. Create Objet
-    const newObjet = new Objet({
-      color, // ✅ fixed from 'couleur'
-      itemType,
-      category
-    });
+    const newObjet = new Objet({ color, itemType, category });
     await newObjet.save();
 
-    // 2. Create and attach Images
-    if (!Array.isArray(images) || images.length === 0) {
+    // 2. Upload Images
+    /*if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ message: "Please upload at least one image" });
     }
+
     const imageDocs = await Promise.all(
       images.map(async (imgDataUrl) => {
-        try {
-          if (!imgDataUrl.startsWith("data:image/")) {
-            throw new Error("Invalid image format");
-          }
-    
-          const uploadResponse = await cloudinary.uploader.upload(imgDataUrl); 
-          const imageUrl = uploadResponse.secure_url;
-    
-          const image = new Image({ url: imageUrl, objet: newObjet._id });
-          await image.save();
-          return image._id;
-        } catch (error) {
-          console.error("Image upload failed:", error);
-          throw new Error("Failed to upload one or more images");
+        if (!imgDataUrl.startsWith("data:image/")) {
+          throw new Error("Invalid image format");
         }
+
+        const uploadResponse = await cloudinary.uploader.upload(imgDataUrl);
+        const imageUrl = uploadResponse.secure_url;
+
+        const image = new Image({ url: imageUrl, objet: newObjet._id });
+        await image.save();
+        return image._id;
       })
     );
-    
-    newObjet.images = imageDocs;
-    await newObjet.save(); // update with image refs
 
-    // 3. Create Publication with objet ref
+    newObjet.images = imageDocs;*/
+    await newObjet.save();
+
+    // 3. Geocode the location
+    const geoLocation = await geocodeAddress(location); // { type: 'Point', coordinates: [lon, lat] }
+
+    // 4. Create Publication
     const newPublication = new Publication({
       title,
       date,
@@ -56,17 +57,43 @@ router.post("/", protectRoute ,async (req, res) => {
       description,
       reward,
       objet: newObjet._id,
-      user:req.user._id
-      
+      user: req.user._id,
+      geoLocation // Add this field in your Publication schema if needed
     });
+
     await newPublication.save();
 
+    // 5. Find nearby users (within 5km) and send notifications
+    const nearbyUsers = await User.find({
+      location: {
+        $near: {
+          $geometry: geoLocation,
+          $maxDistance: 5000, // 5km
+        },
+      },
+      _id: { $ne: req.user._id }, // exclude publisher
+    });
+
+    await Promise.all(
+      nearbyUsers.map(async (user) => {
+        const notification = new Notification({
+          userId: user._id,
+          type: 'alert',
+          title: 'Nearby item posted',
+          message: `An item matching your area was posted: "${title}"`,
+        });
+        await notification.save();
+      })
+    );
+
     res.status(201).json({ message: "Publication created", publication: newPublication });
+
   } catch (err) {
     console.error("Error creating publication:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 
 router.get("/", async (req, res) => {

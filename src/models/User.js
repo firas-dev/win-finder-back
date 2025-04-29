@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       unique: false,
       trim: false,
     },
+    location: {
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], index: '2dsphere' } // [lon, lat]
+    },    
     password: {
       type: String,
       required: true,

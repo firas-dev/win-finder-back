@@ -1,4 +1,3 @@
-// routes/notifications.js
 import express from 'express'
 import Notification from '../models/Notification.js'
 
