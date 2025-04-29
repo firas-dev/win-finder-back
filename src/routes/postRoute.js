@@ -1,43 +1,59 @@
 import cloudinary from "../lib/cloudinary.js"
 import express from "express";
 import Publication from "../models/Publication.js";
-import { geocodeAddress } from '../utils/geocode.js';
 import Objet from "../models/Objet.js"; 
 import Image from "../models/Image.js"; 
 import protectRoute from "../middleware/auth.middleware.js";
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import axios from 'axios';
 
 const router = express.Router();
+
+const geocodeAddress = async (location) => {
+  const res = await axios.get('https://nominatim.openstreetmap.org/search', {
+    params: {
+      q: location,
+      format: 'json',
+      limit: 1,
+    },
+    headers: {
+      'User-Agent': 'YourAppName/1.0'
+    }
+  });
+  console.log("Geocoding response:", res.data); 
+  if (res.data.length > 0) {
+    return [
+      parseFloat(res.data[0].lon),
+      parseFloat(res.data[0].lat)
+    ];
+  } else {
+    throw new Error("Address not found");
+  }
+};
+
 
 
 router.post("/", protectRoute, async (req, res) => {
   try {
     const { title, date, location, description, reward, color, itemType, category, images } = req.body;
 
-    if (!title || !date || !location || !description || !color || !itemType || !category) {
+    if (!title || !date || !description || !color || !itemType || !category) {
       return res.status(400).json({ message: "Please provide the required fields" });
     }
 
-    // ✅ Ensure location is a valid [lat, lon] array
-    if (
-      !Array.isArray(location) ||
-      location.length !== 2 ||
-      typeof location[0] !== 'number' ||
-      typeof location[1] !== 'number'
-    ) {
-      return res.status(400).json({ message: "Location must be a [latitude, longitude] array of numbers" });
-    }
+    let coordinates = [0, 0];
+      if (location && location.trim()) {
+        try {
+          coordinates = await geocodeAddress(location);
+        } catch (geoErr) {
+          console.warn("Geocoding failed:", geoErr.message);
+          // You can choose to reject registration if geocoding fails
+          return res.status(400).json({ message: "Invalid address provided" });
+        }
+      }
 
-    const [latitude, longitude] = location;
-
-    // ✅ Convert to GeoJSON format
-    const geoLocation = {
-      type: "Point",
-      coordinates: [longitude, latitude], // GeoJSON uses [lon, lat]
-    };
-
-    // ✅ Create Object
+    // 1. Create the Objet (item)
     const newObjet = new Objet({
       title,
       date,
@@ -46,11 +62,13 @@ router.post("/", protectRoute, async (req, res) => {
       color,
       itemType,
       category,
-      location: geoLocation, // Use the fixed format
+      location: {
+        type: 'Point',
+        coordinates
+      }
     });
     await newObjet.save();
 
-    // ✅ Handle Images
     if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ message: "Please upload at least one image" });
     }
@@ -72,50 +90,55 @@ router.post("/", protectRoute, async (req, res) => {
 
     newObjet.images = imageDocs;
     await newObjet.save();
-
- // 3. Create Publication
- const newPublication = new Publication({
-  title,
-  date,
-  location: req.body.location, // store raw [lat, lon] if needed
-  description,
-  reward,
-  objet: newObjet._id,
-  user: req.user._id,
-  geoLocation,
-});
-
-await newPublication.save();
-
-// 4. Find nearby users (within 5km) and send notifications
-const nearbyUsers = await User.find({
-  location: {
-    $near: {
-      $geometry: geoLocation,
-      $maxDistance: 5000,
-    },
-  },
-  _id: { $ne: req.user._id },
-});
-
-await Promise.all(
-  nearbyUsers.map(async (user) => {
-    const notification = new Notification({
-      userId: user._id,
-      type: 'alert',
-      title: 'Nearby item posted',
-      message: `An item matching your area was posted: ${title}`,
+    const geoLocation = {
+      type: 'Point',
+      coordinates
+    };
+    // 2. Create the Publication
+    const publication = new Publication({
+      title: newObjet.title,
+      date: newObjet.date,
+      location: newObjet.location,
+      description: newObjet.description,
+      reward: newObjet.reward,
+      user: req.user._id, // Assuming you're storing the user's ID in `req.user`
+      objet: newObjet._id,
+      
     });
-    await notification.save();
-  })
-);
-res.status(201).json({ message: "Publication created", publication: newPublication });
+    await publication.save();
 
-} catch (err) {
-  console.error("Error creating publication:", err);
-  res.status(500).json({ error: "Server error" });
-}
+    const nearbyUsers = await User.find({
+      location: {
+        $near: {
+          $geometry: geoLocation,
+          $maxDistance: 5000,
+        },
+      },
+      _id: { $ne: req.user._id },
+    });
+    
+
+    await Promise.all(
+      nearbyUsers.map(async (user) => {
+        const notification = new Notification({
+          userId: user._id,
+          type: 'alert',
+          title: 'Nearby item posted',
+          message: `An item matching your area was posted: "${title}"`,
+        });
+        await notification.save();
+      })
+    );
+
+    res.status(201).json({ message: "Publication created", publication  });
+
+  } catch (err) {
+    console.error("Error creating publication:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
+
+
 
 
 
