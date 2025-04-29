@@ -10,7 +10,6 @@ import axios from 'axios';
 
 const router = express.Router();
 
-const axios = require('axios');
 
 const geocodeAddress = async (location) => {
   if (!location || typeof location !== 'string' || location.trim() === '') {
