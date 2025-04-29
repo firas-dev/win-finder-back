@@ -73,14 +73,50 @@ router.post("/", protectRoute, async (req, res) => {
     newObjet.images = imageDocs;
     await newObjet.save();
 
-    // ✅ Optionally: Create a Publication linked to the Object here
-
-    res.status(201).json({ message: "Item created successfully", objet: newObjet });
-  } catch (error) {
-    console.error("Error creating item:", error);
-    res.status(500).json({ message: error.message || "Internal server error" });
-  }
+ // 3. Create Publication
+ const newPublication = new Publication({
+  title,
+  date,
+  location: req.body.location, // store raw [lat, lon] if needed
+  description,
+  reward,
+  objet: newObjet._id,
+  user: req.user._id,
+  geoLocation,
 });
+
+await newPublication.save();
+
+// 4. Find nearby users (within 5km) and send notifications
+const nearbyUsers = await User.find({
+  location: {
+    $near: {
+      $geometry: geoLocation,
+      $maxDistance: 5000,
+    },
+  },
+  _id: { $ne: req.user._id },
+});
+
+await Promise.all(
+  nearbyUsers.map(async (user) => {
+    const notification = new Notification({
+      userId: user._id,
+      type: 'alert',
+      title: 'Nearby item posted',
+      message: `An item matching your area was posted: ${title}`,
+    });
+    await notification.save();
+  })
+);
+res.status(201).json({ message: "Publication created", publication: newPublication });
+
+} catch (err) {
+  console.error("Error creating publication:", err);
+  res.status(500).json({ error: "Server error" });
+}
+});
+
 
 
 router.get("/", async (req, res) => {
