@@ -43,7 +43,7 @@ router.post("/", protectRoute, async (req, res) => {
     }
 
     let coordinates = [0, 0];
-      if (location && location.trim()) {
+      if (location ) {
         try {
           coordinates = await geocodeAddress(location);
         } catch (geoErr) {
