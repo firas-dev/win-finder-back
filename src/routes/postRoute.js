@@ -66,7 +66,7 @@ router.post("/", protectRoute, async (req, res) => {
     // 1. Create the Objet (item)
     const newObjet = new Objet({ color, itemType, category });
     await newObjet.save();
-    /*if (!Array.isArray(images) || images.length === 0) {
+    if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ message: "Please upload at least one image" });
     }
 
@@ -86,7 +86,7 @@ router.post("/", protectRoute, async (req, res) => {
     );
 
     newObjet.images = imageDocs;
-    await newObjet.save();*/
+    await newObjet.save();
     const geoLocation = {
       type: 'Point',
       coordinates
