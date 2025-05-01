@@ -17,7 +17,7 @@ const geocodeAddress = async (adresse) => {
         limit: 1,
       },
       headers: {
-        'User-Agent': 'YourAppName/1.0'
+        'User-Agent': 'FinderApp/1.0 (firaselhaj3@gmail.com)'
       }
     });
     console.log("Geocoding response:", res.data); 

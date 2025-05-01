@@ -33,15 +33,8 @@ const publicationSchema = new mongoose.Schema({
     required: true
   },
   geoLocation: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point'
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      required: true
-    }
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], index: '2dsphere' } 
   }
 }, {
   timestamps: true

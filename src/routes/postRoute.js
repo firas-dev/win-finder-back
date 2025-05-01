@@ -64,22 +64,9 @@ router.post("/", protectRoute, async (req, res) => {
       }
 
     // 1. Create the Objet (item)
-    const newObjet = new Objet({
-      title,
-      date,
-      description,
-      reward,
-      color,
-      itemType,
-      category,
-      location: {
-        type: 'Point',
-        coordinates
-      }
-    });
+    const newObjet = new Objet({ color, itemType, category });
     await newObjet.save();
-
-    if (!Array.isArray(images) || images.length === 0) {
+    /*if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ message: "Please upload at least one image" });
     }
 
@@ -99,23 +86,24 @@ router.post("/", protectRoute, async (req, res) => {
     );
 
     newObjet.images = imageDocs;
-    await newObjet.save();
+    await newObjet.save();*/
     const geoLocation = {
       type: 'Point',
       coordinates
     };
     // 2. Create the Publication
-    const publication = new Publication({
-      title: newObjet.title,
-      date: newObjet.date,
-      location: newObjet.location,
-      description: newObjet.description,
-      reward: newObjet.reward,
-      user: req.user._id, // Assuming you're storing the user's ID in `req.user`
+    const newPublication = new Publication({
+      title,
+      date,
+      location,
+      description,
+      reward,
       objet: newObjet._id,
-      
+      user: req.user._id,
+      geoLocation // Add this field in your Publication schema if needed
     });
-    await publication.save();
+    await newPublication.save();
+
 
     const nearbyUsers = await User.find({
       location: {
@@ -140,7 +128,7 @@ router.post("/", protectRoute, async (req, res) => {
       })
     );
 
-    res.status(201).json({ message: "Publication created", publication  });
+    res.status(201).json({ message: "Publication created", Publication  });
 
   } catch (err) {
     console.error("Error creating publication:", err);
@@ -203,12 +191,6 @@ router.get("/:id", protectRoute, async (req, res) => {
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
     }
-
-    // Optional: Only allow access to the owner
-    /*if (item.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }*/
-
     res.status(200).json(item); // ✅ Send back the item
   } catch (error) {
     console.error("Error fetching item by ID:", error);
