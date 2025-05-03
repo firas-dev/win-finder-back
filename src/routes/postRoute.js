@@ -186,8 +186,15 @@ router.get("/user",protectRoute , async(req,res)=>{
 
 router.get("/:id", protectRoute, async (req, res) => {
   try {
-    const item = await Publication.findById(req.params.id);
-
+    const item = await Publication.findById(req.params.id)
+    .populate('user', 'username profileImage rating')
+    .populate({
+      path: "objet",  // Populate the 'objet' field
+      populate: {
+        path: "images",  // Populate the 'images' field within 'objet'
+        select: "url"    // Only select the 'url' field of the image
+      }
+    });
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
     }
