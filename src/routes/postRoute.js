@@ -173,18 +173,6 @@ router.get("/", async (req, res) => {
 });
 
 
-router.get("/user/:id",protectRoute , async(req,res)=>{
-  try {
-    const userId = req.params.id;
-    const items = await Publication.find({ user: userId }).sort({ createdAt: -1 });  
-    res.json(items); 
-  } catch (error) {
-    console.error("get user items error",error); 
-    res.status(500).json({message:"Server error"})
-  }
-}); 
-
-
 router.get("/:id", protectRoute, async (req, res) => {
   try {
     const item = await Publication.findById(req.params.id)
@@ -252,5 +240,19 @@ router.delete("/:id", protectRoute , async (req, res) => {
     res.status(500).json({ message: "Internal server Error" });
   }
 });
+
+
+
+
+router.get("/user/:id",protectRoute , async(req,res)=>{
+  try {
+    const userId = req.params.id;
+    const items = await Publication.find({ user: userId }).sort({ createdAt: -1 });  
+    res.json(items); 
+  } catch (error) {
+    console.error("get user items error",error); 
+    res.status(500).json({message:"Server error"})
+  }
+}); 
 
 export default router;
