@@ -184,7 +184,6 @@ router.get("/:id", protectRoute, async (req, res) => {
         select: "url"    // Only select the 'url' field of the image
       }
     });
-    console.log(Publication.objet.images)
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
     }
@@ -241,12 +240,10 @@ router.delete("/:id", protectRoute , async (req, res) => {
   }
 });
 
-
-
-
 router.get("/user/:id",protectRoute , async(req,res)=>{
   try {
     const userId = req.params.id;
+    console.log("userId: ",userId)
     const items = await Publication.find({ user: userId }).sort({ createdAt: -1 });  
     res.json(items); 
   } catch (error) {
