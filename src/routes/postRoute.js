@@ -173,9 +173,10 @@ router.get("/", async (req, res) => {
 });
 
 
-router.get("/user",protectRoute , async(req,res)=>{
+router.get("/user/:id",protectRoute , async(req,res)=>{
   try {
-    const items=Publication.find({user:req.user._id}).sort({createdAt: -1}); 
+    const userId = req.params.id;
+    const items = await Publication.find({ user: userId }).sort({ createdAt: -1 });  
     res.json(items); 
   } catch (error) {
     console.error("get user items error",error); 
@@ -195,6 +196,7 @@ router.get("/:id", protectRoute, async (req, res) => {
         select: "url"    // Only select the 'url' field of the image
       }
     });
+    console.log(Publication.objet.images)
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
     }
