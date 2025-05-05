@@ -244,7 +244,15 @@ router.get("/user/:id",protectRoute , async(req,res)=>{
   try {
     const userId = req.params.id;
     console.log("userId: ",userId)
-    const items = await Publication.find({ user: userId }).sort({ createdAt: -1 });  
+    const items = await Publication.find({ user: userId })
+    .populate({
+      path: "objet",  // Populate the 'objet' field
+      populate: {
+        path: "images",  // Populate the 'images' field within 'objet'
+        select: "url"    // Only select the 'url' field of the image
+      }
+    })
+    .sort({ createdAt: -1 });  
     res.json(items); 
   } catch (error) {
     console.error("get user items error",error); 
