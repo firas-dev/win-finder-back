@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken" ;
 import axios from 'axios';
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { API_URL } from "../../../mobile/constants/api.js";
 
 const router=express.Router(); 
 const generateToken=(userId) => {
@@ -155,36 +156,66 @@ router.post("/forgot-password", async (req, res) => {
 
     // Generate token
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpiry = Date.now() + 1000 * 60 * 30; 
+    const resetTokenExpiry = Date.now() + 1000 * 60 * 30;
 
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = resetTokenExpiry;
 
     await user.save();
 
-    const resetUrl = `winFinder://reset-password?token=${resetToken}`;
+    // Use a deep link to navigate to ResetPasswordScreen
+    const resetUrl = `winfinder://reset-password?token=${resetToken}`; // Adjust scheme as per your app
 
-
-    // Send email
+    // Email with HTML and plain text
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: email,
-      subject: "FinderApp - Password Reset Request",
+      subject: "WinFinder - Password Reset Request",
       html: `
-        <p>Hello ${user.username},</p>
-        <p>You requested a password reset for your FinderApp account.</p>
-        <p>Click the link below to reset your password (valid for 30 minutes):</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-        <br />
-        <p>If you didn’t request this, please ignore this email.</p>
-        <p>Thanks,<br />FinderApp Team</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .button { display: inline-block; padding: 10px 20px; background-color: #16A34A; color: #fff; text-decoration: none; border-radius: 5px; }
+            .button:hover { background-color: #13893b; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>WinFinder Password Reset</h2>
+            <p>Hello ${user.username},</p>
+            <p>You requested a password reset for your WinFinder account.</p>
+            <p>Please click the button below to reset your password (link valid for 30 minutes):</p>
+            <p>
+              <a href="${resetUrl}" class="button">Reset Password</a>
+            </p>
+            <p>If the button above doesn’t work, copy and paste this link into your app: <br><a href="${resetUrl}">${resetUrl}</a></p>
+            <p>If you didn’t request this, please ignore this email.</p>
+            <p>Thanks,<br>WinFinder Team</p>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+        Hello ${user.username},\n\n
+        You requested a password reset for your WinFinder account.\n
+        Please open this link in your app to reset your password (valid for 30 minutes):\n
+        ${resetUrl}\n\n
+        If you didn’t request this, please ignore this email.\n\n
+        Thanks,\n
+        WinFinder Team
       `,
     };
 
+    console.log('Sending email with options:', mailOptions);
     await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully');
 
     res.status(200).json({ message: "Reset instructions sent to your email" });
-
   } catch (error) {
     console.error("Error in forgot-password route:", error);
     res.status(500).json({ message: "Internal server error" });
