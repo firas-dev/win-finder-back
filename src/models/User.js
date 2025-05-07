@@ -41,6 +41,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "https://via.placeholder.com/40",
     },
+    resetPasswordToken: {type: String},
+    resetPasswordExpires: {type: Date},
+
   },
   { timestamps: true }
 );
@@ -57,6 +60,8 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.comparePassword = async function (userPassword) {
   return await bcrypt.compare(userPassword, this.password);
 };
+
+
 
 const User = mongoose.model("User", userSchema);
 

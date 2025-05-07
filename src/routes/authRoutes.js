@@ -2,6 +2,8 @@ import express from "express" ;
 import User from "../models/User.js";
 import jwt from "jsonwebtoken" ; 
 import axios from 'axios';
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 
 const router=express.Router(); 
 const generateToken=(userId) => {
@@ -34,24 +36,15 @@ const geocodeAddress = async (adresse) => {
   router.post("/register", async (req, res) => {
     try {
       const { email, username, password, phone, adresse } = req.body;
-  
       if (!username?.trim() || !email?.trim() || !password?.trim() || !phone?.trim()) {
         return res.status(400).json({ message: "All fields are required!" });
       }
-  
       if (password.length < 6) {
         return res.status(400).json({ message: "Password should be at least 6 characters long" });
       }
-  
       if (username.length < 3) {
         return res.status(400).json({ message: "Username should be at least 3 characters long" });
       }
-  
-      const existingEmail = await User.findOne({ email });
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-  
       const existingUsername = await User.findOne({ username });
       if (existingUsername) {
         return res.status(400).json({ message: "Username already exists" });
@@ -105,9 +98,6 @@ const geocodeAddress = async (adresse) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
-
-
 
 router.post("/login",async(req,res)=>{
     try {
@@ -141,6 +131,103 @@ router.post("/login",async(req,res)=>{
         res.status(500).json({message:"Internal server error !!!"}); 
     }
 });
+//node mailer configuration
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "No account with that email found" });
+    }
+
+    // Generate token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpiry = Date.now() + 1000 * 60 * 30; 
+
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpiry;
+
+    await user.save();
+
+    const resetUrl = `${process.env.API_URL}/reset-password?token=${resetToken}`;
+
+    // Send email
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: "FinderApp - Password Reset Request",
+      html: `
+        <p>Hello ${user.username},</p>
+        <p>You requested a password reset for your FinderApp account.</p>
+        <p>Click the link below to reset your password (valid for 30 minutes):</p>
+        <a href="${resetUrl}">${resetUrl}</a>
+        <br />
+        <p>If you didn’t request this, please ignore this email.</p>
+        <p>Thanks,<br />FinderApp Team</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Reset instructions sent to your email" });
+
+  } catch (error) {
+    console.error("Error in forgot-password route:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: "Token and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    }
+
+    // Find user with a valid (not expired) token
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    // Update password and remove reset token/expiry
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password has been reset successfully" });
+
+  } catch (error) {
+    console.error("Error in reset-password route:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 
 
 export default router
