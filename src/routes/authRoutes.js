@@ -162,7 +162,7 @@ router.post("/forgot-password", async (req, res) => {
 
     await user.save();
 
-    const resetUrl = `finderapp://reset-password/${resetToken}`;
+    const resetUrl = `${process.env.API_URL}/reset-password?token=${resetToken}`;
 
     // Send email
     const mailOptions = {
