@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken" ;
 import axios from 'axios';
 import crypto from "crypto";
 import nodemailer from "nodemailer";
-import { API_URL } from "../../../mobile/constants/api.js";
 
 const router=express.Router(); 
 const generateToken=(userId) => {
